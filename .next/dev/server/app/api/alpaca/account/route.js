@@ -1,0 +1,10 @@
+var R=require("../../../../chunks/[turbopack]_runtime.js")("server/app/api/alpaca/account/route.js")
+R.c("server/chunks/node_modules_next_7818b66d._.js")
+R.c("server/chunks/node_modules_@alpacahq_alpaca-trade-api_dist_c6dfa384._.js")
+R.c("server/chunks/node_modules_lodash_57f45634._.js")
+R.c("server/chunks/node_modules_ws_36b19efe._.js")
+R.c("server/chunks/node_modules_4b0b810b._.js")
+R.c("server/chunks/[root-of-the-server]__1b9752e6._.js")
+R.c("server/chunks/_next-internal_server_app_api_alpaca_account_route_actions_5ba6e8c6.js")
+R.m("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/alpaca/account/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)")
+module.exports=R.m("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/alpaca/account/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)").exports

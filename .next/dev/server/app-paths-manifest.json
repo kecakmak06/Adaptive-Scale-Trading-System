@@ -1,0 +1,9 @@
+{
+  "/api/alpaca/account/route": "app/api/alpaca/account/route.js",
+  "/api/alpaca/bars/route": "app/api/alpaca/bars/route.js",
+  "/api/alpaca/market-status/route": "app/api/alpaca/market-status/route.js",
+  "/api/alpaca/orders/route": "app/api/alpaca/orders/route.js",
+  "/api/alpaca/positions/route": "app/api/alpaca/positions/route.js",
+  "/api/alpaca/snapshot/route": "app/api/alpaca/snapshot/route.js",
+  "/page": "app/page.js"
+}

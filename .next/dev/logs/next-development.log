@@ -1,0 +1,77 @@
+[00:00:01.351] Server  LOG      ✓ Ready in 1189ms
+[00:00:04.040] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:04.211] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:04.211] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:00:04.211] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.3.1","sv":"0.1.3","ts":1766292088556}
+[00:00:04.633] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:04.639] Server  ERROR   Error fetching orders: Error: Request failed with status code 401
+[00:00:04.642] Server  ERROR   Error fetching asset info for AAPL: Error: Request failed with status code 401
+[00:00:04.643] Server  ERROR   Snapshot API Error: "Request failed with status code 401"
+[00:00:04.647] Server  ERROR   Error fetching Alpaca account: Error: Request failed with status code 401
+[00:00:04.659] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:04.664] Server  ERROR   Error fetching snapshot for AAPL: Error: code: 401, message: undefined
+[00:00:04.713] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:04.772] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:04.830] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:04.886] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:04.938] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:06.150] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:06.156] Server  ERROR   Error fetching orders: Error: Request failed with status code 401
+[00:00:06.223] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:06.297] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:06.553] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:06.557] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:06.630] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:06.697] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:07.349] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:07.356] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:07.406] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:07.472] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:07.839] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:07.874] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:07.903] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:07.954] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.140] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.145] Server  ERROR   Error fetching orders: Error: Request failed with status code 401
+[00:00:08.208] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.276] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.342] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:08.345] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.396] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.447] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.856] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:08.861] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.924] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:08.982] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:09.144] Server  ERROR   Error fetching snapshot for AAPL: Error: code: 401, message: undefined
+[00:00:09.144] Server  ERROR   Snapshot API Error: "code: 401, message: undefined"
+[00:00:09.148] Server  ERROR   Error fetching asset info for AAPL: Error: Request failed with status code 401
+[00:00:09.397] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:09.403] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:09.461] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:09.522] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:10.165] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:10.179] Server  ERROR   Error fetching orders: Error: Request failed with status code 401
+[00:00:10.237] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:10.246] Server  ERROR   Error fetching bars for AAPL: Error: code: 401, message: undefined
+[00:00:10.289] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:10.344] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:10.401] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:10.457] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:12.146] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:12.159] Server  ERROR   Error fetching orders: Error: Request failed with status code 401
+[00:00:12.218] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:12.272] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:14.147] Server  ERROR   Error fetching Alpaca account: Error: Request failed with status code 401
+[00:00:14.158] Server  ERROR   Error fetching snapshot for AAPL: Error: code: 401, message: undefined
+[00:00:14.158] Server  ERROR   Snapshot API Error: "code: 401, message: undefined"
+[00:00:14.161] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:14.224] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:14.252] Server  ERROR   Error fetching asset info for AAPL: Error: Request failed with status code 401
+[00:00:14.261] Server  ERROR   Error fetching orders: Error: Request failed with status code 401
+[00:00:14.337] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:16.146] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:16.150] Server  ERROR   Error fetching orders: Error: Request failed with status code 401
+[00:00:16.227] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:00:16.277] Server  ERROR   Error fetching positions: Error: Request failed with status code 401
+[00:01:13.427] Server  LOG        Reload env: .env.local
