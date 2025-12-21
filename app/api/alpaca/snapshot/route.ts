@@ -11,6 +11,11 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+        if (!process.env.NEXT_PUBLIC_ALPACA_API_KEY || !process.env.NEXT_PUBLIC_ALPACA_API_SECRET) {
+            console.error("Alpaca credentials missing in environment variables");
+            throw new Error("Missing Alpaca credentials");
+        }
+
         const [snapshot, asset] = await Promise.all([
             alpacaClient.getSnapshot(symbol),
             alpacaClient.getAsset(symbol)
