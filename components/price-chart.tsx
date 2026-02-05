@@ -6,7 +6,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
   ReferenceLine,
   Cell,
@@ -30,89 +29,62 @@ interface PriceChartProps {
   currentPrice?: number
   symbol?: string
   exchange?: string
+  orders?: any[]
+  position?: any
+  scalarLevels?: { top: string, bottom: string } | null
 }
 
 const Candlestick = (props: any) => {
-  const {
-    x,
-    y,
-    width,
-    height,
-    openClose: [open, close],
-  } = props;
-  const isGrowing = close > open;
-  const color = isGrowing ? "#26a69a" : "#ef5350"; // TradingView teal/red
-  const ratio = Math.abs(height / (open - close));
+  const { x, width, payload, yAxis } = props;
+
+  if (!yAxis || !yAxis.scale) return null;
+
+  const yOpen = yAxis.scale(payload.o);
+  const yClose = yAxis.scale(payload.c);
+  const yHigh = yAxis.scale(payload.h);
+  const yLow = yAxis.scale(payload.l);
+
+  const isGreen = payload.c >= payload.o;
+  const color = isGreen ? "#22c55e" : "#ef4444";
 
   return (
-    <g stroke={color} fill={color} strokeWidth="1">
-      <path
-        d={`
-          M ${x + width / 2}, ${y}
-          L ${x + width / 2}, ${y + height}
-        `}
-      />
-      <rect
-        x={x}
-        y={isGrowing ? y : y + height - Math.abs(open - close) * ratio}
-        width={width}
-        height={Math.max(1, Math.abs(open - close) * ratio)}
-        fill={color}
-        stroke="none"
-      />
+    <g>
+      <line x1={x + width / 2} y1={yHigh} x2={x + width / 2} y2={yLow} stroke={color} strokeWidth="1" />
+      <rect x={x} y={Math.min(yOpen, yClose)} width={width} height={Math.abs(yOpen - yClose)} fill={color} strokeWidth="0" />
     </g>
   );
 };
 
-// Custom shape wrapper to interface between Recharts data and our SVG logic
 const CustomCandle = (props: any) => {
-  const { x, width, height, payload, yAxis } = props;
+  return <Candlestick {...props} />
+}
 
-  // Debug log (throttled/once ideally, but for now just log first one)
-  if (payload && payload.t === "LOG_CHECK") console.log("CustomCandle props:", props);
-
-  if (!yAxis || !yAxis.scale) {
-    if (Math.random() < 0.01) console.warn("CustomCandle: Missing yAxis or scale", props);
-    return null;
-  }
-
-  const { o, h, l, c } = payload;
-
-  const yHigh = yAxis.scale(h);
-  const yLow = yAxis.scale(l);
-  const yOpen = yAxis.scale(o);
-  const yClose = yAxis.scale(c);
-
-  const bodyTop = Math.min(yOpen, yClose);
-  const bodyHeight = Math.abs(yOpen - yClose);
-
-  const isGrowing = c >= o;
-  const color = isGrowing ? "#26a69a" : "#ef5350";
-
-  return (
-    <g stroke={color} fill={color} strokeWidth="1">
-      <line x1={x + width / 2} y1={yHigh} x2={x + width / 2} y2={yLow} />
-      <rect
-        x={x}
-        y={bodyTop}
-        width={width}
-        height={Math.max(1, bodyHeight)}
-        stroke="none"
-      />
-    </g>
-  );
-};
-
-
-export function PriceChart({ data, isLoading, timeframe, currentPrice, symbol = "AAPL", exchange = "NASDAQ" }: PriceChartProps) {
+export function PriceChart({ data, isLoading, timeframe, currentPrice, symbol = "AAPL", exchange = "NASDAQ", orders = [], position, scalarLevels }: PriceChartProps) {
   const [activeData, setActiveData] = React.useState<ChartData | null>(null);
 
-  // Reset active data when data changes to the last candle
-  React.useEffect(() => {
-    if (data && data.length > 0) {
-      setActiveData(data[data.length - 1])
+  // --- SYNC LOGIC ---
+  const effectiveData = React.useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    // Copy data to avoid mutation
+    const nextData = [...data];
+    const lastIdx = nextData.length - 1;
+    const lastCandle = { ...nextData[lastIdx] };
+
+    // Only patch if we have a valid current price
+    if (currentPrice !== undefined && currentPrice !== 0 && lastCandle) {
+      // Update Close to match current price
+      lastCandle.c = currentPrice;
+
+      // Update High/Low so the candle remains valid
+      if (currentPrice > lastCandle.h) lastCandle.h = currentPrice;
+      if (currentPrice < lastCandle.l) lastCandle.l = currentPrice;
+
+      nextData[lastIdx] = lastCandle;
     }
-  }, [data])
+
+    return nextData;
+  }, [data, currentPrice]);
 
   if (isLoading) {
     return (
@@ -122,7 +94,7 @@ export function PriceChart({ data, isLoading, timeframe, currentPrice, symbol = 
     )
   }
 
-  if (!data || data.length === 0) {
+  if (!effectiveData || effectiveData.length === 0) {
     return (
       <div className="h-full w-full flex items-center justify-center text-muted-foreground">
         No chart data available
@@ -131,7 +103,7 @@ export function PriceChart({ data, isLoading, timeframe, currentPrice, symbol = 
   }
 
   // Use the active data (hovered) or the latest data
-  const displayData = activeData || data[data.length - 1];
+  const displayData = activeData || effectiveData[effectiveData.length - 1];
   const isUp = displayData.c >= displayData.o;
   const change = displayData.c - displayData.o;
   const changePercent = (change / displayData.o) * 100;
@@ -163,9 +135,22 @@ export function PriceChart({ data, isLoading, timeframe, currentPrice, symbol = 
   }
 
   // Determine min/max for domain to not squash candles
-  const minPrice = Math.min(...data.map(d => d.l))
-  const maxPrice = Math.max(...data.map(d => d.h))
-  const domainPadding = (maxPrice - minPrice) * 0.1
+  let minPrice = Math.min(...effectiveData.map(d => d.l))
+  let maxPrice = Math.max(...effectiveData.map(d => d.h))
+
+  // Validate domain
+  if (!isFinite(minPrice) || !isFinite(maxPrice) || minPrice === maxPrice) {
+    if (currentPrice) {
+      minPrice = currentPrice * 0.99;
+      maxPrice = currentPrice * 1.01;
+    } else {
+      // Fallback defaults if data is weird
+      minPrice = 0;
+      maxPrice = 100;
+    }
+  }
+
+  const domainPadding = (maxPrice - minPrice) * 0.1 || 1; // Ensure non-zero padding
 
   return (
     <div className="relative w-full h-full">
@@ -196,20 +181,19 @@ export function PriceChart({ data, isLoading, timeframe, currentPrice, symbol = 
             <span className={isUp ? "text-[#26a69a]" : "text-[#ef5350]"}>{displayData.c.toFixed(2)}</span>
           </div>
           <div className="flex gap-1">
-            <span className={isUp ? "text-[#26a69a]" : "text-[#ef5350]"}>
-              {change > 0 ? "+" : ""}{change.toFixed(2)} ({changePercent.toFixed(2)}%)
-            </span>
+            <span className="text-muted-foreground">C</span>
+            <span className={isUp ? "text-[#26a69a]" : "text-[#ef5350]"}>{change > 0 ? "+" : ""}{change.toFixed(2)} ({changePercent.toFixed(2)}%)</span>
           </div>
         </div>
         <div className="flex gap-1 mt-0.5">
           <span className="text-muted-foreground">Vol</span>
-          <span className="text-pink-500">{displayData.v.toLocaleString()}</span>{/* TradingView often uses pinkish for vol label or muted */}
+          <span className="text-pink-500">{displayData.v.toLocaleString()}</span>
         </div>
       </div>
 
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
-          data={data}
+          data={effectiveData}
           onMouseMove={(state) => {
             if (state.activePayload && state.activePayload.length) {
               setActiveData(state.activePayload[0].payload)
@@ -239,48 +223,118 @@ export function PriceChart({ data, isLoading, timeframe, currentPrice, symbol = 
             width={60}
           />
           {/* Hidden Volume Axis */}
-          <YAxis yAxisId="volume" orientation="left" hide domain={[0, Math.max(...data.map(d => d.v)) * 3]} />
+          <YAxis yAxisId="volume" orientation="left" hide domain={[0, Math.max(...effectiveData.map(d => d.v)) * 3]} />
 
-          {/* Tooltip removed (replaced by Legend) */}
-
-
-          {/* Volume Bars - colored by up/down */}
+          {/* Volume Bars */}
           <Bar dataKey="v" yAxisId="volume" barSize={4}>
-            {data.map((entry, index) => (
+            {effectiveData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.c >= entry.o ? "#26a69a" : "#ef5350"} opacity={0.5} />
             ))}
           </Bar>
 
-          {/* We use a Bar to render the custom Candle shape. 
-            We pass the 'h' (high) as the value just to give it a range, 
-            but the shape helper uses payload o/h/l/c. 
-            Actually, best way to render a custom shape that relies on multiple keys 
-            is to use a custom shape on a component that receives the data.
-        */}
-
-          {/* Diagnostic Line to verify data/axis - should show a blue line */}
+          {/* Line for Trend */}
           <Line type="monotone" dataKey="c" stroke="#3b82f6" yAxisId="price" dot={false} strokeWidth={2} />
 
+          {/* Custom Candles */}
           <Bar
             dataKey="c"
             yAxisId="price"
-            shape={(props: any) => {
-              // Diagnostic shape
-              return <CustomCandle {...props} />
-            }}
+            shape={<CustomCandle />}
             isAnimationActive={false}
           />
+
+          {/* Position Line (if exists) */}
+          {position && position.qty !== 0 && (
+            <ReferenceLine
+              y={parseFloat(position.avg_entry_price)}
+              yAxisId="price"
+              stroke={position.qty > 0 ? "#22c55e" : "#ef4444"}
+              strokeDasharray="0"
+              strokeWidth={1}
+              label={{
+                position: 'left',
+                value: `POS ${position.qty}@${parseFloat(position.avg_entry_price).toFixed(2)}`,
+                fill: position.qty > 0 ? "#22c55e" : "#ef4444",
+                fontSize: 10
+              }}
+            />
+          )}
+
+          {/* Order Lines (Only Open Orders) */}
+          {orders.map((order) => {
+            // Filter: Don't show canceled/expired... BUT DO SHOW FILLED
+            if (["canceled", "expired", "rejected", "suspended", "replaced"].includes(order.status)) {
+              return null;
+            }
+
+            const isFilled = order.status === 'filled';
+            const isLong = order.side === 'buy';
+            const price = parseFloat(order.limit_price || order.stop_price || order.filled_avg_price || 0);
+
+            if (!price || isNaN(price)) return null;
+
+            let strokeColor = "#3b82f6"; // Default Blue for Open Orders
+            let strokeDash = "5 5";
+
+            if (isFilled) {
+              strokeColor = isLong ? "#22c55e" : "#ef4444"; // Green for Buy Fill, Red for Sell Fill
+              strokeDash = "0"; // Solid line for fills
+            }
+
+            return (
+              <ReferenceLine
+                key={order.id}
+                y={price}
+                yAxisId="price"
+                stroke={strokeColor}
+                strokeDasharray={strokeDash}
+                strokeWidth={1}
+                label={{
+                  position: 'left',
+                  value: `${order.side.toUpperCase()} ${order.qty}@${price.toFixed(2)}`,
+                  fill: strokeColor,
+                  fontSize: 10
+                }}
+              />
+            )
+          })}
+
 
           {currentPrice && (
             <ReferenceLine
               y={currentPrice}
               yAxisId="price"
-              stroke="#ef4444"
+              stroke="#eab308"
               strokeDasharray="3 3"
               strokeWidth={1}
-              label={{ position: 'right', value: currentPrice.toFixed(2), fill: '#ef4444', fontSize: 11, dy: -10 }}
+              label={{ position: 'right', value: currentPrice.toFixed(2), fill: '#eab308', fontSize: 11, dy: -10 }}
             />
           )}
+
+          {/* Scalar Channel Lines */}
+          {scalarLevels && scalarLevels.top && (
+            <ReferenceLine
+              y={parseFloat(scalarLevels.top)}
+              yAxisId="price"
+              stroke="#ffffff"
+              strokeDasharray="10 5"
+              strokeWidth={1}
+              opacity={0.5}
+              label={{ position: 'insideLeft', value: `TOP ${scalarLevels.top}`, fill: '#ffffff', fontSize: 10 }}
+            />
+          )}
+          {scalarLevels && scalarLevels.bottom && (
+            <ReferenceLine
+              y={parseFloat(scalarLevels.bottom)}
+              yAxisId="price"
+              stroke="#ffffff"
+              strokeDasharray="10 5"
+              strokeWidth={1}
+              opacity={0.5}
+              label={{ position: 'insideLeft', value: `BOT ${scalarLevels.bottom}`, fill: '#ffffff', fontSize: 10 }}
+            />
+          )}
+
         </ComposedChart>
       </ResponsiveContainer>
     </div>

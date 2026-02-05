@@ -51,10 +51,14 @@ export class AlpacaClient {
             let lookbackMinutes = 0;
 
             switch (timeframe) {
-                case "1Min": lookbackMinutes = limit * 2; break; // 2x buffer
-                case "5Min": lookbackMinutes = limit * 5 * 2; break;
-                case "15Min": lookbackMinutes = limit * 15 * 2; break;
-                case "1Hour": lookbackMinutes = limit * 60 * 2; break;
+                // Ensure we look back at least 5 days (5 * 24 * 60 = 7200 mins) for intraday
+                // This covers weekends (2 days) + holidays + buffer
+                case "1Min":
+                case "5Min":
+                case "15Min":
+                case "1Hour":
+                    lookbackMinutes = Math.max(limit * 60 * 2, 8000);
+                    break;
                 case "1Day": lookbackMinutes = limit * 24 * 60 * 2; break; // 2x for weekends
                 default: lookbackMinutes = limit * 24 * 60; // default to day-ish
             }
@@ -67,6 +71,7 @@ export class AlpacaClient {
             const resp = alpaca.getBarsV2(symbol, {
                 timeframe: timeframe, // "1Min", "5Min", "15Min", "1Day"
                 start: start.toISOString(),
+                adjustment: 'all', // Ensure we get splits/divs and potentially raw/extended data depending on feed defaults
                 // limit: limit, // Do NOT pass limit to API if we want the LATEST. If we pass limit=14 with start=30days ago, we get the OLD 14 bars.
                 // We will fetch from start -> now, then slice.
             });
@@ -168,6 +173,36 @@ export class AlpacaClient {
         }
     }
 
+    async getSnapshots(symbols: string[]): Promise<any> {
+        try {
+            // accounts for different versions of the library or potential missing method
+            if (typeof alpaca.getSnapshots === 'function') {
+                const response = await alpaca.getSnapshots(symbols);
+                if (Array.isArray(response)) {
+                    return response.reduce((acc: any, curr: any) => {
+                        acc[curr.symbol] = curr;
+                        return acc;
+                    }, {});
+                }
+                return response;
+            } else {
+                console.warn("alpaca.getSnapshots is not a function, falling back to sequential fetch");
+                const snapshots: Record<string, any> = {};
+                await Promise.all(symbols.map(async (sym) => {
+                    try {
+                        snapshots[sym] = await this.getSnapshot(sym);
+                    } catch (e) {
+                        console.error(`Failed to fetch ${sym}`, e);
+                    }
+                }));
+                return snapshots;
+            }
+        } catch (error) {
+            console.error(`Error fetching snapshots for ${symbols}:`, error);
+            throw error;
+        }
+    }
+
     async getLatestTrade(symbol: string): Promise<any> {
         try {
             const trade = await alpaca.getLatestTrade(symbol);
@@ -188,19 +223,47 @@ export class AlpacaClient {
         }
     }
 
-    async submitOrder(order: { symbol: string; qty: number; side: "buy" | "sell"; type: "market" | "limit"; limitPrice?: number }): Promise<any> {
+    async submitOrder(order: {
+        symbol: string;
+        qty: number;
+        side: "buy" | "sell";
+        type: "market" | "limit" | "stop" | "stop_limit";
+        timeInForce?: "day" | "gtc" | "opg" | "cls" | "ioc" | "fok";
+        limitPrice?: number;
+        stopPrice?: number;
+        clientOrderId?: string;
+        orderClass?: "simple" | "bracket" | "oto" | "oco";
+        takeProfit?: { limit_price: number };
+        stopLoss?: { stop_price: number; limit_price?: number };
+        extendedHours?: boolean;
+    }): Promise<any> {
         try {
-            const ord = await alpaca.createOrder({
+            const payload: any = {
                 symbol: order.symbol,
                 qty: order.qty,
                 side: order.side,
                 type: order.type,
-                time_in_force: "day",
+                time_in_force: order.timeInForce || "day",
                 limit_price: order.limitPrice,
-            });
+                stop_price: order.stopPrice,
+                client_order_id: order.clientOrderId,
+                extended_hours: order.extendedHours
+            };
+
+            if (order.orderClass) {
+                payload.order_class = order.orderClass;
+                if (order.takeProfit) payload.take_profit = order.takeProfit;
+                if (order.stopLoss) payload.stop_loss = order.stopLoss;
+            }
+
+            const ord = await alpaca.createOrder(payload);
             return ord;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting order:", error);
+            if (error.response && error.response.data) {
+                console.error("Alpaca Error Details:", error.response.data);
+                throw new Error(JSON.stringify(error.response.data));
+            }
             throw error;
         }
     }
@@ -229,11 +292,42 @@ export class AlpacaClient {
         }
     }
 
+    async getOrder(orderId: string): Promise<any> {
+        try {
+            const order = await alpaca.getOrder(orderId);
+            return order;
+        } catch (error) {
+            console.error(`Error fetching order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
     async cancelOrder(orderId: string): Promise<void> {
         try {
             await alpaca.cancelOrder(orderId);
         } catch (error) {
             console.error(`Error cancelling order ${orderId}:`, error);
+            throw error;
+        }
+    }
+
+    async cancelOrdersForSymbol(symbol: string): Promise<void> {
+        try {
+            // Alpaca doesn't have a direct "cancel all by symbol" method in the JS SDK typically,
+            // so we list open orders and cancel them.
+            // Actually, cancelAllOrders exists but nukes everything.
+            const orders = await alpaca.getOrders({
+                status: 'open',
+                limit: 100, // Reasonable limit
+                nested: false
+            } as any);
+
+            const targetOrders = orders.filter((o: any) => o.symbol === symbol);
+
+            console.log(`Cancelling ${targetOrders.length} orders for ${symbol}`);
+            await Promise.all(targetOrders.map((o: any) => alpaca.cancelOrder(o.id)));
+        } catch (error) {
+            console.error(`Error cancelling orders for ${symbol}:`, error);
             throw error;
         }
     }
@@ -244,6 +338,17 @@ export class AlpacaClient {
         } catch (error) {
             console.error(`Error closing position for ${symbol}:`, error);
             throw error;
+        }
+    }
+
+    async getAccountActivities(activityTypes: string | string[] = "FILL", limit: number = 50): Promise<any[]> {
+        try {
+            // @ts-ignore
+            const activities = await alpaca.getAccountActivities({ activity_types: activityTypes, page_size: limit });
+            return activities;
+        } catch (error) {
+            console.error("Error fetching account activities:", error);
+            return [];
         }
     }
 }

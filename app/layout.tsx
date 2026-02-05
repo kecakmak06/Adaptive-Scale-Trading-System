@@ -9,8 +9,8 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SCALPX - Stock Trading Platform",
-  description: "Professional scalp trading platform with IBKR API integration",
+  title: "ScaleTradeX - Adaptive Trading Platform",
+  description: "Next-gen scalar trading with adaptive channel shifting.",
   generator: "v0.app",
   icons: {
     icon: [

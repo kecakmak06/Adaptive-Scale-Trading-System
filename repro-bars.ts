@@ -1,18 +1,28 @@
+import fs from "fs";
+import path from "path";
 
-import { alpacaClient } from "./lib/alpaca-client"
+const envLocal = fs.readFileSync(path.resolve(".env.local"), "utf-8");
+envLocal.split("\n").forEach(line => {
+    const [key, val] = line.split("=");
+    if (key && val) process.env[key.trim()] = val.trim();
+});
 
-async function test() {
-    console.log("Testing getBars for AAPL without explicit start...")
-    try {
-        const bars = await alpacaClient.getBars("AAPL", "1Day", 10)
-        console.log("Bars returned:", bars.length)
-        if (bars.length > 0) {
-            console.log("First:", bars[0].t)
-            console.log("Last:", bars[bars.length - 1].t)
-        }
-    } catch (e: any) {
-        console.log("Error:", e.message)
+import { alpacaClient } from "./lib/alpaca-client";
+
+async function verify() {
+    console.log("Checking 1Min bars...");
+    const bars1Min = await alpacaClient.getBars("AAPL", "1Min", 100);
+    console.log(`1Min Bars: ${bars1Min.length}`);
+    if (bars1Min.length > 0) {
+        console.log("First:", bars1Min[0].t, "Last:", bars1Min[bars1Min.length - 1].t);
+    }
+
+    console.log("\nChecking 5Min bars...");
+    const bars5Min = await alpacaClient.getBars("AAPL", "5Min", 100);
+    console.log(`5Min Bars: ${bars5Min.length}`);
+    if (bars5Min.length > 0) {
+        console.log("First:", bars5Min[0].t, "Last:", bars5Min[bars5Min.length - 1].t);
     }
 }
 
-test()
+verify().catch(console.error);

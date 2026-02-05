@@ -7,6 +7,12 @@ export async function DELETE(
 ) {
     const { symbol } = await params
     try {
+        // First, cancel any open orders that might be locking the shares
+        await alpacaClient.cancelOrdersForSymbol(symbol)
+
+        // Brief wait to ensure cancellation propagates and shares are unlocked
+        await new Promise(resolve => setTimeout(resolve, 500))
+
         await alpacaClient.closePosition(symbol)
         return NextResponse.json({ success: true })
     } catch (error: any) {

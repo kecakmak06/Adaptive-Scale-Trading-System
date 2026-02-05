@@ -19,7 +19,7 @@ interface Position {
 interface PositionsPanelProps {
   positions: Position[]
   isLoading?: boolean
-  onClosePosition: (symbol: string) => Promise<void>
+  onClosePosition: (position: Position) => Promise<void>
 }
 
 export function PositionsPanel({ positions, isLoading, onClosePosition }: PositionsPanelProps) {
@@ -103,7 +103,7 @@ export function PositionsPanel({ positions, isLoading, onClosePosition }: Positi
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
-                      onClick={() => onClosePosition(position.symbol)}
+                      onClick={() => onClosePosition(position)}
                     >
                       <XCircle className="h-4 w-4" />
                     </Button>

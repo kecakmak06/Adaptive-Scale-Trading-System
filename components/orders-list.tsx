@@ -47,6 +47,7 @@ export function OrdersList({ orders, isLoading, onCancelOrder, filter, setFilter
         switch (status) {
             case "filled": return "bg-green-500/15 text-green-500 hover:bg-green-500/25 border-green-500/20"
             case "new":
+            case "open":
             case "accepted":
             case "calculated": return "bg-blue-500/15 text-blue-500 hover:bg-blue-500/25 border-blue-500/20"
             case "partially_filled": return "bg-yellow-500/15 text-yellow-500 hover:bg-yellow-500/25 border-yellow-500/20"
@@ -90,7 +91,18 @@ export function OrdersList({ orders, isLoading, onCancelOrder, filter, setFilter
                                         <div>
                                             <div className="font-semibold font-mono">{order.symbol}</div>
                                             <div className="text-xs text-muted-foreground">
-                                                {new Date(order.submitted_at).toLocaleString()}
+                                                {(() => {
+                                                    const ts = (order.status === 'filled' || order.status === 'partially_filled') ? (order.filled_at || order.submitted_at) : order.submitted_at;
+                                                    return new Date(ts).toLocaleString("en-US", {
+                                                        timeZone: "America/New_York",
+                                                        month: "numeric",
+                                                        day: "numeric",
+                                                        hour: "numeric",
+                                                        minute: "2-digit",
+                                                        second: "2-digit",
+                                                        hour12: true
+                                                    }) + " ET"
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
@@ -114,7 +126,7 @@ export function OrdersList({ orders, isLoading, onCancelOrder, filter, setFilter
                                             {order.status.replace("_", " ")}
                                         </Badge>
 
-                                        {["new", "accepted", "calculated", "partially_filled"].includes(order.status) && (
+                                        {["new", "open", "accepted", "calculated", "partially_filled"].includes(order.status) && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

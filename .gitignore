@@ -1,3 +1,7 @@
 node_modules
 .env.local
 .env.next
+.vercel
+.next
+.firebase
+.DS_Store

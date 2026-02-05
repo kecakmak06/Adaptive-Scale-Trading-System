@@ -10,6 +10,8 @@ import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
+import { useSimulatedExchange } from "@/hooks/use-simulated-exchange"
+
 interface QuickTradeProps {
   symbol: string
   currentPrice: number
@@ -52,50 +54,37 @@ export function QuickTrade({ symbol, currentPrice, onOrderCreated }: QuickTradeP
 
 
   // Check if we hold this position to show "Buy to Cover" vs "Buy" logic
+  // Simulation Hook
+  const { positions, placeOrder } = useSimulatedExchange()
+
   useEffect(() => {
-    async function checkPosition() {
-      try {
-        const res = await fetch("/api/alpaca/positions")
-        if (res.ok) {
-          const positions = await res.json()
-          const pos = positions.find((p: any) => p.symbol === symbol)
-          if (pos) {
-            setPosition({ qty: Number(pos.qty) })
-          } else {
-            setPosition(null)
-          }
-        }
-      } catch (e) { }
+    // Sync local position state derived from Sim Store
+    const pos = positions.find(p => p.symbol === symbol)
+    if (pos) {
+      setPosition({ qty: pos.qty })
+    } else {
+      setPosition(null)
     }
-    checkPosition()
-  }, [symbol, onOrderCreated]) // Re-check on success
+  }, [symbol, positions])
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch("/api/alpaca/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          symbol,
-          quantity: Number(quantity),
-          side: side.toLowerCase(),
-          orderType: orderType === "scalar" ? "market" : orderType,
-          limitPrice: orderType === "limit" ? Number(limitPrice) : undefined,
-        }),
+      // Place Order via Simulation
+      const order = placeOrder({
+        symbol,
+        qty: Number(quantity),
+        side: side, // 'buy' or 'sell' matches
+        type: orderType === "scalar" ? "market" : orderType,
+        limitPrice: orderType === "limit" ? Number(limitPrice) : undefined
       })
-      const data = await response.json()
-      if (response.ok) {
-        toast({
-          title: "Order Submitted",
-          description: `${side.toUpperCase()} order for ${quantity} ${symbol} submitted.`,
-          variant: "default",
-        })
-        if (onOrderCreated) onOrderCreated(data)
-      } else {
-        const errorMsg = data.error || "Failed to submit order"
-        // Show the actual error message for debugging purposes, instead of generic text
-        throw new Error(errorMsg)
-      }
+
+      toast({
+        title: "Order Submitted",
+        description: `${side.toUpperCase()} order for ${quantity} ${symbol} submitted.`,
+        variant: "default",
+      })
+      if (onOrderCreated) onOrderCreated(order)
+
     } catch (error: any) {
       console.error("Order error:", error)
       toast({
@@ -148,11 +137,9 @@ export function QuickTrade({ symbol, currentPrice, onOrderCreated }: QuickTradeP
       </div>
 
       <Tabs value={orderType} onValueChange={(v) => setOrderType(v as "market" | "limit" | "scalar")}>
-        <TabsList className="grid w-full grid-cols-3 h-8">
+        <TabsList className="grid w-full grid-cols-2 h-8">
           <TabsTrigger value="market" className="text-xs">Market</TabsTrigger>
           <TabsTrigger value="limit" className="text-xs">Limit</TabsTrigger>
-          {/* Scalar removed or kept? Keeping it as it was there before but maybe less used now. */}
-          <TabsTrigger value="scalar" className="text-xs">Scalar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="market" className="space-y-4 mt-4">
